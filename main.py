@@ -78,7 +78,7 @@ def get_user_input_metro_area(metro_area_dict):
         else:
             print("Multiple matches found. Which metro area would you like to select?")
             for match in matches:
-                print(f"[{mult_match_index}]: {match}, {metro_area_dict[match]['state']}")
+                print("[{0}]: {1}, {2}".format(mult_match_index, match, metro_area_dict[match]['state']))
                 mult_match_index +=1
             while not mult_match_found:
                 selection = input('Enter value: ')
