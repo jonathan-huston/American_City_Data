@@ -132,6 +132,13 @@ def build_query(var_code, ma_code):
                              get))) + ',' + var_code + '&for=' + geography + ':' + ma_code + '&key=' + api_key
     return request_str
 
+def build_query_state(var_code, state):
+    '''Takes a variable and stateand return a request query'''
+    request_str = ('/'.join((host, year, dataset,
+                             get))) + ',' + var_code + '&for=state:' + state + '&key=' + api_key
+    return request_str
+
+
 def build_query_list(var_code, ma_code_set):
     request_str_list = []
     for ma_code in ma_code_set:
@@ -140,7 +147,7 @@ def build_query_list(var_code, ma_code_set):
     return request_str_list
 
 def submit_query(request_str):
-    response = requests.get(request_str)
+    response = requests.get(request_str, verify=False) #TODO: This will return an insecure request warning, set to false for now.
     return response.json()
 
 def get_response_list(request_str_list):
@@ -161,6 +168,14 @@ def parse_responses(response_list):
 def build_results_json(results_dict):
     return json.dumps(results_dict)
 
+
+def api_request_by_state(state, variable):
+    '''Request a single category for a single state'''
+    request_str = build_query_state(state, variable)
+    response_json = submit_query(request_str)
+    results_dict = parse_responses([response_json])
+    return build_results_json(results_dict)
+
 def main():
     metro_area_dict = load_metro_area_json('metro_area_codes.json') #import metro area codes
     var_dict = load_variable_json('variable_codes.json') #import variable codes
@@ -176,6 +191,7 @@ def main():
 
 if __name__ == '__main__':
     results = main()
+    # results = api_request_by_state("S1701_C03_001E", "01")
     print(results)
 
 
