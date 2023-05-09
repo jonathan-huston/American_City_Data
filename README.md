@@ -22,8 +22,8 @@ http://flip3.engr.oregonstate.edu:54546/api/data?state=<state_abbreviation>&var=
     - Percent of population with bachelor's degree (25 years and older): S0102_C01_037E
 - A JSON will be returned containing the full name of the state and the requested variable
 
-The following request would return the percent of the population below the poverty line for Virginia: http://flip3.engr.oregonstate.edu:54546/api/data?state=VA&var=S1701_C03_001E
-Results: \
+The following request would return the percent of the population below the poverty line for Virginia: http://flip3.engr.oregonstate.edu:54546/api/data?state=VA&var=S1701_C03_001E \
+Results: 
 {'state': 'Virginia', 'var_name': 'S1701_C03_001E', 'value': '10.2'} \
 
 An example file showing how to request and receive data using the API is available in the root directory ('api_request_test.py')
