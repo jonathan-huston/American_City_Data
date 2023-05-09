@@ -191,7 +191,7 @@ def main():
 
 
 if __name__ == '__main__':
-    #results = main()
-    results = api_request_by_state(state = 'WA', var_code = 'S1701_C03_001E')
+    results = main()
+    # results = api_request_by_state(state = 'WA', var_code = 'S1701_C03_001E')
     print(results)
     pass
