@@ -13,7 +13,7 @@ Due to the amount of available data, only certain variables are available for se
 
 ## REQUESTING AND RECEIVING DATA:
 Data can be requested by sending a request to the following url:
-http://flip3.engr.oregonstate.edu:54546/api/data?state=<state_abbreviation>&var=<var_code>
+[http://flip3.engr.oregonstate.edu:54546/api/data?state=<state_abbreviation>&var=<var_code>](http://flip3.engr.oregonstate.edu:54546/api/data?state=<state_abbreviation>&var=<var_code>)
 - All 50 states + Puerto Rico + District of Columbia are available (see https://www.faa.gov/air_traffic/publications/atpubs/cnt_html/appendix_a.html for two letter abbreviations)
 - Available variables and their codes are listed below (to be expanded):
     - Percent of population below poverty level: S1701_C03_001E 
