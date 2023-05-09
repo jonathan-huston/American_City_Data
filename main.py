@@ -40,20 +40,11 @@ def build_variable_json():
     with open("variable_codes.json", "w" ) as f:
         json.dump(acs_var_dict, f)
 
-
-
-def load_metro_area_json(json_file):
-    '''Loads a json file containing metro area names and locations and convers it to a dictionary'''
+def load_json(json_file):
+    '''Loads a json file convert it to a dictionary'''
     with open(json_file, 'r') as f:
         data = json.load(f)
     return data
-
-def load_variable_json(json_file):
-    '''Loads a json file containing ACS variable codes and convert it to a dictionary'''
-    with open(json_file, 'r') as f:
-        data = json.load(f)
-    return data
-
 
 def get_user_input_metro_area(metro_area_dict):
     '''Return value for metro area code to be used in request, given a text input.
@@ -169,16 +160,18 @@ def build_results_json(results_dict):
     return json.dumps(results_dict)
 
 
-def api_request_by_state(state, variable):
+def api_request_by_state(state, var_code):
     '''Request a single category for a single state'''
-    request_str = build_query_state(state, variable)
+    state_dict = load_json('state_codes.json')
+    state_code = state_dict[state]
+    request_str = build_query_state(state = state_code, var_code = var_code)
     response_json = submit_query(request_str)
     results_dict = parse_responses([response_json])
     return build_results_json(results_dict)
 
 def main():
-    metro_area_dict = load_metro_area_json('metro_area_codes.json') #import metro area codes
-    var_dict = load_variable_json('variable_codes.json') #import variable codes
+    metro_area_dict = load_json('metro_area_codes.json') #import metro area codes
+    var_dict = load_json('variable_codes.json') #import variable codes
     var_dict_for_selection = build_var_selection_dict(var_dict) #Dict used for purposes of allowing selection via command line
     var_code = get_user_input_var(var_dict_for_selection) #Get variable from user
     ma_code_set = get_metro_area_set(metro_area_dict) #Get ma_list from user
@@ -190,8 +183,8 @@ def main():
 
 
 if __name__ == '__main__':
-    results = main()
-    # results = api_request_by_state("S1701_C03_001E", "01")
-    print(results)
-
+    #results = main()
+    # results = api_request_by_state("S1701_C03_001E", "*")
+    # print(results)
+    states = build_state_json()
 
