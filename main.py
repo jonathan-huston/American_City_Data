@@ -156,6 +156,14 @@ def parse_responses(response_list):
         results_dict[results[0]] = results[1]
     return results_dict
 
+def parse_response_state(response_json):
+    results_dict = {}
+    response = response_json[0]
+    results_dict['state'] = response[1][0]
+    results_dict['var_name'] = response[0][1]
+    results_dict['value'] = response[1][1]
+    return results_dict
+
 def build_results_json(results_dict):
     return json.dumps(results_dict)
 
@@ -166,7 +174,7 @@ def api_request_by_state(state, var_code):
     state_code = state_dict[state]
     request_str = build_query_state(state = state_code, var_code = var_code)
     response_json = submit_query(request_str)
-    results_dict = parse_responses([response_json])
+    results_dict = parse_response_state([response_json])
     return build_results_json(results_dict)
 
 def main():
@@ -184,7 +192,6 @@ def main():
 
 if __name__ == '__main__':
     #results = main()
-    # results = api_request_by_state("S1701_C03_001E", "*")
-    # print(results)
-    states = build_state_json()
-
+    results = api_request_by_state(state = 'WA', var_code = 'S1701_C03_001E')
+    print(results)
+    pass
