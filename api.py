@@ -11,9 +11,16 @@ api.config["DEBUG"] = True
 def home():
     return "<h1>API is running. Put list of vars here?</h1>"
 
-@api.route('/api', methods=['GET'])
-def api_all():
-    return main.api_request_by_state("S1701_C03_001E", "01")
+@api.route('/api/data', methods=['GET'])
+def api_state_val():
+    print(request.args)
+    if 'state' in request.args:
+        state= request.args['state']
+    else:
+        return "Error: No state specified"
+    if 'var' in request.args:
+        var = request.args['var']
+    return main.api_request_by_state(var, state)
 
 
 if __name__ == "__main__":
