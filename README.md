@@ -27,3 +27,6 @@ Results: \
 {'state': 'Virginia', 'var_name': 'S1701_C03_001E', 'value': '10.2'} 
 
 An example file showing how to request and receive data using the API is available in the root directory ('api_request_test.py')
+
+UML Diagram:\
+![alt text](https://github.com/jonathan-huston/American_City_Data/blob/main/UML_Sequence_Diagram_Assignment_8.png?raw=true "UML Diagram")
