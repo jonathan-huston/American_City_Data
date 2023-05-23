@@ -16,6 +16,67 @@ get = 'subject?get=NAME'
 geography = 'combined%20statistical%20area'
 
 
+state_code_list = [ 'AK', 'AL', 'AR', 'AZ', 'CA', 'CO', 'CT', 'DC', 'DE', 'FL', 'GA',
+           'HI', 'IA', 'ID', 'IL', 'IN', 'KS', 'KY', 'LA', 'MA', 'MD', 'ME',
+           'MI', 'MN', 'MO', 'MS', 'MT', 'NC', 'ND', 'NE', 'NH', 'NJ', 'NM',
+           'NV', 'NY', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX',
+           'UT', 'VA', 'VT', 'WA', 'WI', 'WV', 'WY']
+
+state_dict = {
+    'AK': 'Alaska',
+    'AL': 'Alabama',
+    'AR': 'Arkansas',
+    'AZ': 'Arizona',
+    'CA': 'California',
+    'CO': 'Colorado',
+    'CT': 'Connecticut',
+    'DC': 'District of Columbia',
+    'DE': 'Delaware',
+    'FL': 'Florida',
+    'GA': 'Georgia',
+    'HI': 'Hawaii',
+    'IA': 'Iowa',
+    'ID': 'Idaho',
+    'IL': 'Illinois',
+    'IN': 'Indiana',
+    'KS': 'Kansas',
+    'KY': 'Kentucky',
+    'LA': 'Louisiana',
+    'MA': 'Massachusetts',
+    'MD': 'Maryland',
+    'ME': 'Maine',
+    'MI': 'Michigan',
+    'MN': 'Minnesota',
+    'MO': 'Missouri',
+    'MS': 'Mississippi',
+    'MT': 'Montana',
+    'NC': 'North Carolina',
+    'ND': 'North Dakota',
+    'NE': 'Nebraska',
+    'NH': 'New Hampshire',
+    'NJ': 'New Jersey',
+    'NM': 'New Mexico',
+    'NV': 'Nevada',
+    'NY': 'New York',
+    'OH': 'Ohio',
+    'OK': 'Oklahoma',
+    'OR': 'Oregon',
+    'PA': 'Pennsylvania',
+    'RI': 'Rhode Island',
+    'SC': 'South Carolina',
+    'SD': 'South Dakota',
+    'TN': 'Tennessee',
+    'TX': 'Texas',
+    'UT': 'Utah',
+    'VA': 'Virginia',
+    'VT': 'Vermont',
+    'WA': 'Washington',
+    'WI': 'Wisconsin',
+    'WV': 'West Virginia',
+    'WY': 'Wyoming'
+}
+
+
 def build_metro_area_json():
     '''Builds a json containing metro area codes.'''
     request_str = build_query('S0101_C01_001E', '*')
@@ -175,23 +236,126 @@ def api_request_by_state(state, var_code):
     request_str = build_query_state(state = state_code, var_code = var_code)
     response_json = submit_query(request_str)
     results_dict = parse_response_state([response_json])
-    return build_results_json(results_dict)
+    return build_results_json(results_dict), results_dict
+
+def get_state_or_ma():
+    match_found = 0
+    print("Would you like to compare states or metro areas?\n[1] Metro Areas\n[2] States")
+    while not match_found:
+        selection = input('Enter selection: ')
+        if selection not in ['1','2']:
+            print("Invalid entry. Please enter 1 or 2")
+        else:
+            if selection == '1':
+                return('ma')
+            return('state')
+
+def get_crime_data():
+    response = requests.get('http://flip2.engr.oregonstate.edu:54544/state_crime', verify=False)
+    return response.json()
+
+def parse_crime_data(json_response):
+    '''Returns a dictionary containing the crime statistics '''
+    crime_data_dict = {}
+    for item in json_response:
+        state = item['State']
+        crime_rates = {}
+        prop_crime_dict = item['Data']['Rates']['Property']
+        viol_crime_dict = item['Data']['Rates']['Violent']
+        for prop_crime in prop_crime_dict:
+            if prop_crime != 'All':
+                crime_rates[prop_crime] = prop_crime_dict[prop_crime]
+        for viol_crime in viol_crime_dict:
+            if viol_crime != 'All':
+                crime_rates[viol_crime] = viol_crime_dict[viol_crime]
+        crime_data_dict[state]=crime_rates
+    return crime_data_dict
+
+
+def get_state_set():
+    '''Get a list of states for comparison'''
+    state_code_set = set()
+    while True:
+        state_tup = get_state_name()
+        state_code_set.add(state_tup)
+        continue_input = input("Type 'Y' to add another state. Otherwise, "
+                               "hit any key to finish.\nInput: ")
+        if continue_input.lower() != 'y':
+            break
+    return state_code_set
+
+def get_state_name():
+    complete = 0
+    match = 0
+    while not match:
+        response = input("Enter two digit state code: ")
+        if response.upper() not in state_code_list:
+            print("Invalid entry.")
+        else:
+            return response.upper(),state_dict[response]
 
 def main():
+
+    #load data
     metro_area_dict = load_json('metro_area_codes.json') #import metro area codes
-    var_dict = load_json('variable_codes.json') #import variable codes
-    var_dict_for_selection = build_var_selection_dict(var_dict) #Dict used for purposes of allowing selection via command line
-    var_code = get_user_input_var(var_dict_for_selection) #Get variable from user
-    ma_code_set = get_metro_area_set(metro_area_dict) #Get ma_list from user
-    request_str_list = build_query_list(var_code, ma_code_set) #Build all request strings
-    response_list = get_response_list(request_str_list) #Get list containing all responses
-    results_dict = parse_responses(response_list) #Build dict containing all responses
-    results_json = build_results_json(results_dict) #Return query results in JSON format
-    return results_json
+    var_dict_ma = load_json('variable_codes.json') #import variable codes
+    var_dict_for_selection_ma = build_var_selection_dict(var_dict_ma) #Dict used for purposes of allowing selection via command line
+    var_dict_state = load_json('variable_codes_states.json') #import variable codes
+    var_dict_for_selection_state = build_var_selection_dict(var_dict_state)
+    raw_crime_data = get_crime_data()
+    crime_data_dict = parse_crime_data(raw_crime_data)
+    
+    #get user input
+    state_or_ma = get_state_or_ma()
+
+    #metro area loop
+    if state_or_ma == 'ma':
+            ma_code_set = get_metro_area_set(metro_area_dict) #Get ma_list from user
+            var_code = get_user_input_var(var_dict_for_selection_ma) #Get variable from user
+            request_str_list = build_query_list(var_code, ma_code_set) #Build all request strings
+            response_list = get_response_list(request_str_list) #Get list containing all responses
+            results_dict = parse_responses(response_list) #Build dict containing all responses
+            results_json = build_results_json(results_dict) #Return query results in JSON format
+            return results_json
+    
+    #state loop
+    else:
+        state_set = get_state_set()
+        var_code = get_user_input_var(var_dict_for_selection_state) #Get variable from user
+
+        #Requests to US Census API routred through here
+        if var_code not in ["Burglary", "Larceny","Motor", "Assault", "Rape", "Murder", "Robbery"]:
+            results_list = []
+            for tup in state_set:
+                results_list.append(api_request_by_state(tup[0], var_code))
+            print("Here are your results:")
+            for item in results_list:
+                state = item[1]['state']
+                var_name = item[1]['var_name']
+                value = item[1]['value']
+                print(f"State: {state}\nCategory: {var_name}\nValue: {value}\n")
+                return results_list
+
+        #Requests to partner microservice API
+        else:
+            results_dict = {}
+            for tup in state_set:
+                result = (crime_data_dict[tup[1]][var_code])
+                results_dict[tup[1]] = result
+
+            print(f"{var_code} per 100,000 results:")
+            for state,num in results_dict.items():
+                print(f"{state}: {num}")
+
+
+
+    #return results_json
+
+
+
 
 
 if __name__ == '__main__':
+    #raw_crime_data = get_crime_data()
     results = main()
-    # results = api_request_by_state(state = 'WA', var_code = 'S1701_C03_001E')
-    print(results)
-    pass
+    #print(get_state_name())
