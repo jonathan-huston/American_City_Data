@@ -4,7 +4,7 @@ import configparser
 import json
 import matplotlib.pyplot as plt
 
-# retrive api key from credentials.cfg
+# retrieve api key from credentials.cfg
 cfg = configparser.ConfigParser()
 cfg.read('credentials.cfg')
 api_key = cfg.get('KEYS', 'census_api_key', raw='')
@@ -90,6 +90,7 @@ def build_metro_area_json():
         metro_area_dict[metro_area] = {'state': state, 'id':area_id}
     with open("metro_area_codes.json", "w") as f:
         json.dump(metro_area_dict, f)
+    return
 
 def build_variable_json():
     ''''Build a json containing selected variables.'''
@@ -101,6 +102,7 @@ def build_variable_json():
     }
     with open("variable_codes.json", "w" ) as f:
         json.dump(acs_var_dict, f)
+    return
 
 def load_json(json_file):
     '''Loads a json file and converts it to a dictionary'''
@@ -208,7 +210,7 @@ def build_query_list(var_code, ma_code_set):
 
 def submit_query(request_str):
     '''Submit a request to US Census API'''
-    response = requests.get(request_str, verify=False) #TODO: This will return an insecure request warning, set to false for now.
+    response = requests.get(request_str, verify=False) #This will return an insecure request warning, set to false for now.
     return response.json()
 
 def get_response_list(request_str_list):
@@ -244,7 +246,7 @@ def api_request_by_state(state, var_code):
     request_str = build_query_state(state = state_code, var_code = var_code)
     response_json = submit_query(request_str)
     results_dict = parse_response_state([response_json])
-    return build_results_json(results_dict), results_dict
+    return results_dict
 
 def get_state_or_ma():
     '''Ask user if they would like to compare state date or metro area data'''
@@ -334,7 +336,7 @@ def print_state_query(state_code_set, var_code, var_dict_state):
     else:
         return False
 
-def build_state_results(var_code, state_code_set):
+def build_state_results(var_code, state_code_set, crime_data_dict):
     '''Generate results for state query'''
     # Requests to US Census API routed through here
     results_dict = {}
@@ -343,20 +345,15 @@ def build_state_results(var_code, state_code_set):
         for tup in state_code_set:
             results_list.append(api_request_by_state(tup[0], var_code))
         for item in results_list:
-            state = item[1]['state']
-            var_name = item[1]['var_name']
-            value = item[1]['value']
-            results_dict[state] = {var_name: value}
-            # print(f"State: {state}\nCategory: {var_name}\nValue: {value}\n")
+            state = item['state']
+            value = item['value']
+            results_dict[state] = value
 
-    # Requests to partner microservice API
+    # Requests to partner microservice
     else:
         for tup in state_code_set:
             result = (crime_data_dict[tup[1]][var_code])
-            results_dict[tup[1]] = {var_code: result}
-        # print(f"{var_code} per 100,000 results:")
-        # for state, num in results_dict.items():
-        #     print(f"{state}: {num}")
+            results_dict[tup[1]] = result
     return results_dict
 
 def print_ma_results(ma_results_dict, var_code,var_dict_ma):
@@ -366,13 +363,16 @@ def print_ma_results(ma_results_dict, var_code,var_dict_ma):
     for k,v, in ma_results_dict.items():
         print(f"{k}: {v}")
     print(f"*************************************************")
-    pass
+    return
 
-def print_state_results(state_results_dict):
-    '''Print results from state query'''
-    print("Here are your results:")
-    for item in state_results_dict:
-        pass
+def print_state_results(state_results_dict, var_code, var_dict_state):
+    '''Print results from state  query'''
+    print(f"\n*************************************************"
+          f"\nQuery results for the following variable: {var_dict_state[var_code]}")
+    for k,v, in state_results_dict.items():
+        print(f"{k}: {v}")
+    print(f"*************************************************")
+    return
 
 def write_json_prompt():
     '''Ask user if they would like to write results to a json file, and get filename from user if yes'''
@@ -385,6 +385,8 @@ def write_json_prompt():
         if user_input.lower() in ['n', 'no']:
             return False
         print("Invalid input. Please enter \'y\' or \'n\'.")
+    return
+
 
 
 def write_results_json(results_dict, fname):
@@ -392,6 +394,7 @@ def write_results_json(results_dict, fname):
     json_object = json.dumps(results_dict)
     with open(fname, "w") as outfile:
         outfile.write(json_object)
+    return
 
 def make_plots_prompt():
     '''Ask user if they would like to generate plots for their data'''
@@ -403,20 +406,19 @@ def make_plots_prompt():
         if user_input.lower() in ['n', 'no']:
             return False
         print("Invalid input. Please enter \'y\' or \'n\'.")
+    return
 
-def make_plots_ma(results_dict, var_code,var_dict_ma):
+def make_plots(results_dict, var_code,var_dict):
     '''Generate plots from query results'''
     # creating the dataset
     metro_areas = list(results_dict.keys())
     values = list(results_dict.values())
     values_float = [float(x) for x in values]
-    print(values)
     plt.bar(metro_areas, values_float, align='center', alpha=1)
-    y_label = (var_dict_ma[var_code])
+    y_label = (var_dict[var_code])
     plt.xlabel("Metro Areas")
     plt.ylabel(y_label)
     plt.title(y_label)
-    # plt.ylim(0)
     plt.show()
 
     return
@@ -429,8 +431,8 @@ def main():
     var_dict_for_selection_ma = build_var_selection_dict(var_dict_ma) #Dict used for purposes of allowing selection via command line
     var_dict_state = load_json('variable_codes_states.json') #import variable codes
     var_dict_for_selection_state = build_var_selection_dict(var_dict_state) #Dict used for purposes of allowing selection via command line
-    # raw_crime_data = get_crime_data() TODO: uncomment this
-    # crime_data_dict = parse_crime_data(raw_crime_data) TODO: Uncomment this
+    raw_crime_data = get_crime_data()
+    crime_data_dict = parse_crime_data(raw_crime_data)
     
     #get user input
     state_or_ma = get_state_or_ma()
@@ -454,33 +456,22 @@ def main():
         confirm = print_state_query(state_code_set, var_code, var_dict_state) #print query and ask user to confirm
         if not confirm:
             main()  # Restart query
-        state_results_dict = build_state_results(var_code, state_code_set) #print query and ask user to confirm
-        results_json = build_results_json(state_results_dict) #Return query results in JSON format
-        print_state_results(state_results_dict)
+        results_dict = build_state_results(var_code, state_code_set, crime_data_dict) #print query and ask user to confirm
+        print_state_results(results_dict, var_code, var_dict_state)
 
     filename = write_json_prompt() #Ask user if they would like to save results
     if filename:
         write_results_json(results_dict, filename)
-    #
+
     make_plots_input = make_plots_prompt()  # Ask user if they would like to plot results
     if make_plots_input:
         if state_or_ma == 'ma':
-            make_plots_ma(results_dict, var_code,var_dict_ma)
-
+            make_plots(results_dict, var_code,var_dict_ma)
+        else:
+            make_plots(results_dict, var_code,var_dict_state)
     return
 
 
-
-
-
-
 if __name__ == '__main__':
-    #raw_crime_data = get_crime_data()
-    # results = main()
-    # print(results)
     main()
-    # write_json_prompt()
 
-#Make write_results_json function, filename = time_date
-#Have  a way to build/write graphs
-#Docstring for all functions, update comments
